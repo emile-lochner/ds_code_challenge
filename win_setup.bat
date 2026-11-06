@@ -12,7 +12,7 @@ echo --------------------------------------
 echo Creating Python Virtual Environment
 echo --------------------------------------
 @echo on
-python -m venv .venv\pyenv
+::python -m venv .venv\pyenv
 call .venv\pyenv\Scripts\activate.bat
 @echo off
 
@@ -20,7 +20,7 @@ echo --------------------------------------
 echo Upgrading pip
 echo --------------------------------------
 @echo on
-python -m pip install --upgrade pip
+::python -m pip install --upgrade pip
 @echo off
 
 echo --------------------------------------
@@ -34,7 +34,7 @@ python -m pip install -r setup\requirements.txt
 echo --------------------------------------
 echo Downloading Data
 echo --------------------------------------
-curl -L -O --output-dir "data" "https://cct-ds-code-challenge-input-data.s3.af-south-1.amazonaws.com/city-hex-polygons-8.geojson"
+::curl -L -O --output-dir "data" "https://cct-ds-code-challenge-input-data.s3.af-south-1.amazonaws.com/city-hex-polygons-8.geojson"
 
 echo --------------------------------------
 echo Setup Complete

@@ -1,3 +1,6 @@
 numpy
 boto3
 python-dotenv
+geopandas
+shapely
+h3
