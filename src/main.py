@@ -4,11 +4,12 @@ import json
 import h3
 import sqlite3
 import pandas as pd
+import time
 
 # This is to control which parts of the pipeline to run
 do_task_1 = False
 do_task_2 = True
-rebuild_task_2_db = True
+rebuild_task_2_db = False
 
 # Constants that control parts of the pipeline
 H3_RESOLUTION = 8
@@ -81,6 +82,9 @@ if do_task_1:
 # Task 2: Initial Data Transformation
 # ---------------------------------------------
 if do_task_2:
+    # Used for timing analysis
+    tic_start = time.perf_counter()
+
     if rebuild_task_2_db:
         # Build the table from the raw service requests data
         df = pd.read_csv(SERVICE_REQUESTS_FPATH, index_col=0)
@@ -123,6 +127,13 @@ if do_task_2:
                 latitude IS NOT NULL 
                 and longitude IS NOT NULL
                 and h3_level8_index == '0';
+        '''
+
+        no_index_query = '''
+            SELECT count(*)
+            FROM requests
+            WHERE 
+                h3_level8_index == '0';
         '''
 
         update_query = '''
@@ -178,3 +189,13 @@ if do_task_2:
             print("The following notification_numbers have errors in their h3_level8_index values:")
             for row in rows:
                 print(f"notification: {row[0]} validation_index: {row[1]} generated_index: {row[2]}")
+
+        # Display how many rows could not be assigned a h3_level8_cell
+        cur_fetch.execute(no_index_query)
+        rows = cur_fetch.fetchone()
+
+        print(f"{rows[0]} rows could not be assigned a h3_level8_index.")
+
+    # Timing analysis
+    dt = time.perf_counter() - tic_start
+    print(f"Task 2 took {dt:.1f} seconds to complete")
