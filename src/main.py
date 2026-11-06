@@ -8,20 +8,19 @@ import pandas as pd
 # This is to control which parts of the pipeline to run
 do_task_1 = False
 do_task_2 = True
-rebuild_task_2_db = False
+rebuild_task_2_db = True
 
 # Constants that control parts of the pipeline
 H3_RESOLUTION = 8
 H3_LIMIT = 10
 SERVICE_REQUESTS_FPATH = "data/sr.csv"
+SERVICE_REQUESTS_WITH_H3_FPATH = "data/sr_hex.csv"
 OUTPUT_DB = "data/service_requests.db"
 
 # ---------------------------------------------
 # Task 1: Data Extraction
 # ---------------------------------------------
 if do_task_1:
-
-
     h3_cells_aws = data.get_h3_cells_from_aws(H3_RESOLUTION, H3_LIMIT)
     h3_cells_file = data.get_h3_cells_from_file("data/city-hex-polygons-8.geojson", H3_LIMIT)
 
@@ -83,12 +82,20 @@ if do_task_1:
 # ---------------------------------------------
 if do_task_2:
     if rebuild_task_2_db:
+        # Build the table from the raw service requests data
         df = pd.read_csv(SERVICE_REQUESTS_FPATH, index_col=0)
         df.index.name = "id"
 
         with sqlite3.connect(OUTPUT_DB) as con:
             df.to_sql("requests", con, if_exists="replace", index=False)
             con.execute("ALTER TABLE requests ADD COLUMN h3_level8_index TEXT DEFAULT '0'")
+            con.execute("CREATE INDEX IF NOT EXISTS idx_notification ON requests(notification_number)")
+            con.commit()
+
+        # Build the table from the verification CSV file. This will be used to check our work.
+        df = pd.read_csv(SERVICE_REQUESTS_WITH_H3_FPATH, usecols=["notification_number", "h3_level8_index"])
+        with sqlite3.connect(OUTPUT_DB) as con:
+            df.to_sql("h3_validation", con, if_exists="replace", index=False)
             con.execute("CREATE INDEX IF NOT EXISTS idx_notification ON requests(notification_number)")
             con.commit()
 
@@ -149,3 +156,25 @@ if do_task_2:
                 print(f"Progress: {n_done} / {N_rows}")
 
         con.commit()
+
+        # Validate that all the h3_level8_indices are correct based on the validation file.
+        validation_query = '''
+            SELECT 
+                h3v.notification_number,
+                h3v.h3_level8_index as h3_validation,
+                req.h3_level8_index as h3_requests
+            FROM h3_validation AS h3v
+            INNER JOIN requests AS req ON req.notification_number = h3v.notification_number
+            WHERE req.h3_level8_index != h3v.h3_level8_index;
+        '''
+
+        cur_fetch.execute(validation_query)
+        rows = cur_fetch.fetchall()
+
+        if len(rows) == 0:
+            print("All h3_level8_index values match reference file.")
+
+        else:
+            print("The following notification_numbers have errors in their h3_level8_index values:")
+            for row in rows:
+                print(f"notification: {row[0]} validation_index: {row[1]} generated_index: {row[2]}")

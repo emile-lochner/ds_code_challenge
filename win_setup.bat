@@ -35,7 +35,9 @@ echo --------------------------------------
 echo Downloading Data
 echo --------------------------------------
 ::curl -L -O --output-dir "data" "https://cct-ds-code-challenge-input-data.s3.af-south-1.amazonaws.com/city-hex-polygons-8.geojson"
-curl -L -O --output-dir "data" "https://cct-ds-code-challenge-input-data.s3.af-south-1.amazonaws.com/city-hex-polygons-8.geojson"
+
+::curl -L -O --output-dir "data" "https://cct-ds-code-challenge-input-data.s3.af-south-1.amazonaws.com/sr_hex.csv.gz"
+::python -c "import gzip,shutil; shutil.copyfileobj(gzip.open('data/sr_hex.csv.gz'), open('data/sr_hex.csv','wb'))"
 
 echo --------------------------------------
 echo Setup Complete
