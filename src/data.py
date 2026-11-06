@@ -7,9 +7,36 @@ import json
 # Load environment variables from the .env file in the root directory
 load_dotenv()
 
+def get_cell_index(cell: dict):
+    return cell["properties"]["index"]
 
-def get_h3_cells(resolution):
-    records_list = []
+def get_cell_centroid(cell: dict):
+    centroid = {
+        "lat": cell["properties"]["centroid_lat"],
+        "lon": cell["properties"]["centroid_lon"]
+    }
+    return centroid
+
+def get_cell_vertices(cell: dict):
+    return cell["geometry"]["coordinates"]
+
+def get_h3_cells_from_file(fpath: str, limit = -1):
+    cell_list = []
+    with open(fpath, 'r') as fp:
+        data = json.load(fp)
+
+        for cell in data["features"]:
+            cell_list.append(cell)
+
+            if limit > 0:
+                limit -= 1
+                if limit == 0:
+                    return cell_list
+
+    return cell_list
+
+def get_h3_cells_from_aws(resolution: int, limit = -1):
+    cell_list = []
 
     # Get data from AWS
     s3 = boto3.client(
@@ -19,7 +46,11 @@ def get_h3_cells(resolution):
         )
 
     r = int(resolution)
-    query = f'''SELECT * FROM S3Object[*].features[*] f WHERE f.properties.resolution = {r} LIMIT 10'''
+
+    if limit < 0:
+        query = f'''SELECT * FROM S3Object[*].features[*] f WHERE f.properties.resolution = {r}'''
+    else:
+        query = f'''SELECT * FROM S3Object[*].features[*] f WHERE f.properties.resolution = {r} LIMIT {limit}'''
 
     response = s3.select_object_content(
         Bucket="cct-ds-code-challenge-input-data",
@@ -37,7 +68,6 @@ def get_h3_cells(resolution):
             *lines, buffer = buffer.split("\n")
             for line in lines:
                 row = json.loads(line)  # one row as a dict
-                records_list.append(row)
+                cell_list.append(row)
 
-    return records_list
-
+    return cell_list
