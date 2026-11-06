@@ -31,7 +31,11 @@ echo --------------------------------------
 python -m pip install -r setup\requirements.txt
 @echo off
 
-:: End of script
+echo --------------------------------------
+echo Downloading Data
+echo --------------------------------------
+curl -L -O --output-dir "data" "https://cct-ds-code-challenge-input-data.s3.af-south-1.amazonaws.com/city-hex-polygons-8.geojson"
+
 echo --------------------------------------
 echo Setup Complete
 echo --------------------------------------
