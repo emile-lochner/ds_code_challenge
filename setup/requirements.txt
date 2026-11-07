@@ -6,3 +6,5 @@ shapely
 h3
 requests
 openpyxl
+scipy
+tqdm

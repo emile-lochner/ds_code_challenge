@@ -5,21 +5,14 @@ import data
 from geopy.distance import geodesic
 from shapely.geometry import Polygon
 
+
+
 def _calculate_polygon_overlap(cell:dict, ref_cell:dict) -> float:
     cell_outline = data.get_cell_vertices(cell)
     ref_outline = data.get_cell_vertices(ref_cell)
 
-    cell_tuples = []
-    ref_tuples = []
-
-    for coord in cell_outline[0]:
-        cell_tuples.append(tuple(coord))
-
-    for coord in ref_outline[0]:
-        ref_tuples.append(tuple(coord))
-
-    cell_poly = Polygon(cell_tuples)
-    ref_poly = Polygon(ref_tuples)
+    cell_poly = data.geojson_to_polygon(cell_outline)
+    ref_poly = data.geojson_to_polygon(ref_outline)
 
     intersection = ref_poly.intersection(cell_poly).area
     return intersection / ref_poly.area
