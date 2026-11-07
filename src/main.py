@@ -47,7 +47,7 @@ h3_cells_aws = data.get_h3_cells_from_aws(H3_RESOLUTION, H3_LIMIT)
 h3_cells_file = data.get_h3_cells_from_file("data/city-hex-polygons-8.geojson", H3_LIMIT)
 
 # Validate using city-hex-polygons-8.geojson supplied
-h3_cells_valid = validation.h3_validation(h3_cells_aws, h3_cells_file)
+h3_cells_valid = validation.h3_validation(h3_cells_aws, h3_cells_file, H3_RESOLUTION)
 
 # Check validation of data with conformance score
 # Log Time to perform validation steps

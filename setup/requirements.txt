@@ -1,7 +1,7 @@
 numpy
 boto3
 python-dotenv
-geopandas
+geopy
 shapely
 h3
 requests

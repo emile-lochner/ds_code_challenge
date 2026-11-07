@@ -2,9 +2,38 @@ import h3
 import json
 import time
 import data
+from geopy.distance import geodesic
+from shapely.geometry import Polygon
 
-def calculate_polygon_overlap(poly1, poly2) -> float:
-    pass
+def _calculate_polygon_overlap(cell:dict, ref_cell:dict) -> float:
+    cell_outline = data.get_cell_vertices(cell)
+    ref_outline = data.get_cell_vertices(ref_cell)
+
+    cell_tuples = []
+    ref_tuples = []
+
+    for coord in cell_outline[0]:
+        cell_tuples.append(tuple(coord))
+
+    for coord in ref_outline[0]:
+        ref_tuples.append(tuple(coord))
+
+    cell_poly = Polygon(cell_tuples)
+    ref_poly = Polygon(ref_tuples)
+
+    intersection = ref_poly.intersection(cell_poly).area
+    return intersection / ref_poly.area
+
+def _calculate_centroid_distance(cell:dict, ref_cell:dict) -> float:
+    cell_centroid = data.get_cell_centroid(cell)
+    ref_centroid = data.get_cell_centroid(ref_cell)
+
+    cell_tuple = (cell_centroid["lat"], cell_centroid["lon"])
+    ref_tuple = (ref_centroid["lat"], ref_centroid["lon"])
+
+    distance = geodesic(cell_tuple, ref_tuple)
+
+    return distance.meters
 
 def _check_h3_structure(cell:dict, h3_resolution: int) -> bool:
     '''
@@ -119,7 +148,7 @@ def _convert_list_to_dict(cell_list:list) -> dict:
 
     return cell_dict
 
-def h3_validation(test_cells, reference_cells, threshold=0.95):
+def h3_validation(test_cells:list, reference_cells:list, h3_resolution:int, threshold=0.95,):
     print("\n - Validating H3 data against reference cells")
     tic_start = time.perf_counter()
 
@@ -131,15 +160,46 @@ def h3_validation(test_cells, reference_cells, threshold=0.95):
     n_missing = 0
 
     for cell in test_cells:
-        index = data.get_cell_index(cell)
+        if _check_h3_structure(cell, h3_resolution) == False:
+            # Cell does not have the required structure
+            n_rejected += 1
+            continue
 
+        index = data.get_cell_index(cell)
+        
         if index not in reference_dict:
             # Cell is not contained in the reference cells, hence we cannot do validation
             n_missing += 1
             continue
 
-        
+        ref_cell = reference_dict[index]
+        if _check_h3_structure(ref_cell, h3_resolution) == False:
+            # Reference cell does not have the correct structure
+            n_missing += 1
+            continue
 
+        # Test centroid distance
+        # GPS systems typically have an accuracy of around 10m, hence for every 10m difference we will reduce the score by 5%
+        distance_m = _calculate_centroid_distance(cell, ref_cell)
+
+        score_distance = 1.0 - 0.05 * distance_m / 10.0
+        if score_distance < 0.0:
+            score_distance = 0.0
+
+        # Test polygon overlap
+        overlap_fraction = _calculate_polygon_overlap(cell, ref_cell)
+
+        # Test acceptance threshold
+        score = score_distance * overlap_fraction
+
+        if score >= threshold:
+            valid_cells.append(cell)
+            n_accepted += 1
+
+        else:
+            # Cell does not match overlap and position threshold
+            n_rejected += 1
+            continue
 
     print(f"Accepted {n_accepted} cells.")
     print(f"Rejected {n_rejected} cells.")
