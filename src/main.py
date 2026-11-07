@@ -5,6 +5,8 @@ import h3
 import sqlite3
 import pandas as pd
 import time
+import requests
+import os
 
 # This is to control which parts of the pipeline to run
 do_task_1 = False
@@ -223,4 +225,24 @@ if do_task_5:
         with sqlite3.connect(OUTPUT_DB) as con:
             df.to_sql("wind", con, if_exists="replace", index=False)
 
-    
+
+    r = requests.get(
+        "https://nominatim.openstreetmap.org/search",
+        params={
+            "q": "Atlantis, Cape Town, South Africa",
+            "format": "jsonv2",
+            "polygon_geojson": 1,
+            "limit": 5,
+        },
+        headers={"User-Agent": f"coct_ds_challenge/1.0 {os.environ['OPENMAP_USERNAME']}"},
+        timeout=30,
+    )
+    r.raise_for_status()
+
+    for place in r.json():
+        print(place["display_name"], place["type"], place["geojson"]["type"])
+
+    geom = r.json()[0]["geojson"]  # GeoJSON Polygon or MultiPolygon
+    coords = geom["coordinates"]   # [lon, lat] pairs
+
+    print(coords)
