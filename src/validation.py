@@ -205,7 +205,8 @@ def h3_validation(test_cells:list, reference_cells:list, h3_resolution:int, thre
     print(f"Rejected {n_rejected} cells.")
     print(f"Missing {n_missing} cells from validation reference.")
 
-
     tic_end = time.perf_counter()
     dt = tic_end - tic_start
     print(f"Done: {dt:.1f} seconds.")
+
+    return valid_cells

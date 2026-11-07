@@ -11,6 +11,8 @@ feature = {
 }
 
 con = sqlite3.connect("geo.db")
+con.enable_load_extension(True)
+con.load_extension("path_to_geopoly")
 con.execute("CREATE VIRTUAL TABLE IF NOT EXISTS parcels USING geopoly(name)")
 
 # Geopoly takes a single ring ([[x, y], ...]), so use the outer ring only
