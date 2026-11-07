@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 import requests
 import json
+import time
 
 # Load environment variables from the .env file in the root directory
 load_dotenv()
@@ -22,6 +23,9 @@ def get_cell_vertices(cell: dict):
     return cell["geometry"]["coordinates"]
 
 def get_h3_cells_from_file(fpath: str, limit = -1):
+    print("\n - Compiling H3 data from reference file.")
+    tic_start = time.perf_counter()
+
     cell_list = []
     with open(fpath, 'r') as fp:
         data = json.load(fp)
@@ -32,11 +36,19 @@ def get_h3_cells_from_file(fpath: str, limit = -1):
             if limit > 0:
                 limit -= 1
                 if limit == 0:
-                    return cell_list
+                    break
+
+    tic_end = time.perf_counter()
+    dt = tic_end - tic_start
+    print(f"Obtained {len(cell_list)} records.")
+    print(f"Done: {dt:.1f} seconds.")
 
     return cell_list
 
 def get_h3_cells_from_aws(resolution: int, limit = -1):
+    print("\n - Fetching and compiling H3 data from AWS.")
+    tic_start = time.perf_counter()
+
     cell_list = []
 
     # Get data from AWS
@@ -70,6 +82,11 @@ def get_h3_cells_from_aws(resolution: int, limit = -1):
             for line in lines:
                 row = json.loads(line)  # one row as a dict
                 cell_list.append(row)
+
+    tic_end = time.perf_counter()
+    dt = tic_end - tic_start
+    print(f"Obtained {len(cell_list)} records.")
+    print(f"Done: {dt:.1f} seconds.")
 
     return cell_list
 

@@ -1,9 +1,17 @@
 import h3
 import json
+import time
+import data
 
-def h3_validation(cell: dict, h3_resolution: int):
+def calculate_polygon_overlap(poly1, poly2) -> float:
+    pass
+
+def _check_h3_structure(cell:dict, h3_resolution: int) -> bool:
     '''
-    We expect the cell dictionary to have a specific structure. If it does not the cell is invalid and false is returned.
+    We expect the cell dictionary to have a specific structure as shown below.
+    Of these the most critical for our purpose is the index, centroid coordinates and the geometry.
+    This function checks that the cell has all of these. If it does not the cell will get rejected.
+
     Expected structure:
     {
         "type": "Feature",
@@ -19,10 +27,8 @@ def h3_validation(cell: dict, h3_resolution: int):
         }
     }
     '''
-    if "type" not in cell:
-        print("Invalid: Cell does not contain keyword 'type'.")
-        return False
 
+    # Check that all the required keywords are present in the cell dictionary.
     if "properties" not in cell:
         print("Invalid: Cell does not contain keyword 'properties'.")
         return False
@@ -38,10 +44,6 @@ def h3_validation(cell: dict, h3_resolution: int):
     if "centroid_lon" not in cell["properties"]:
         print("Invalid: Cell does not contain keyword 'properties:centroid_lon'.")
         return False
-
-    # if "resolution" not in cell["properties"]:
-    #     print("Invalid: Cell does not contain keyword 'properties:resolution'.")
-    #     return False
 
     if "geometry" not in cell:
         print("Invalid: Cell does not contain keyword 'geometry'.")
@@ -68,10 +70,6 @@ def h3_validation(cell: dict, h3_resolution: int):
         print("Invalid: centroid_lon is not float.")
         return False
 
-    # if isinstance(cell["properties"]["resolution"], int) == False:
-    #     print("Invalid: resolution is not int.")
-    #     return False
-
     if cell["geometry"]["type"] != "Polygon":
         print("Invalid: geometry type is not Polygon.")
         return False
@@ -95,7 +93,8 @@ def h3_validation(cell: dict, h3_resolution: int):
         # The first and last coordinate pair must be the same to close the shape.
         print("Invalid: start and end coordinates are not the same.")
         return False
-    
+
+    # Use the h3 package to test that the index is correct for the supplied centroid coordinates
     # Get the index from the cell
     index = cell["properties"]["index"]
     centroid = {
@@ -108,4 +107,45 @@ def h3_validation(cell: dict, h3_resolution: int):
         print("Invalid: Cell index is incorrect.")
         return False
 
+    # Structure of the data is valid
     return True
+
+
+def _convert_list_to_dict(cell_list:list) -> dict:
+    cell_dict = {}
+    for cell in cell_list:
+        index = data.get_cell_index(cell)
+        cell_dict[index] = cell
+
+    return cell_dict
+
+def h3_validation(test_cells, reference_cells, threshold=0.95):
+    print("\n - Validating H3 data against reference cells")
+    tic_start = time.perf_counter()
+
+    valid_cells = []
+    reference_dict = _convert_list_to_dict(reference_cells)
+
+    n_accepted = 0
+    n_rejected = 0
+    n_missing = 0
+
+    for cell in test_cells:
+        index = data.get_cell_index(cell)
+
+        if index not in reference_dict:
+            # Cell is not contained in the reference cells, hence we cannot do validation
+            n_missing += 1
+            continue
+
+        
+
+
+    print(f"Accepted {n_accepted} cells.")
+    print(f"Rejected {n_rejected} cells.")
+    print(f"Missing {n_missing} cells from validation reference.")
+
+
+    tic_end = time.perf_counter()
+    dt = tic_end - tic_start
+    print(f"Done: {dt:.1f} seconds.")
