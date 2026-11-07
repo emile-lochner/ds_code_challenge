@@ -8,8 +8,11 @@ import time
 
 # This is to control which parts of the pipeline to run
 do_task_1 = False
-do_task_2 = True
+do_task_2 = False
 rebuild_task_2_db = False
+do_task_5 = True
+download_wind_data = False
+rebuild_wind_data_db = False
 
 # Constants that control parts of the pipeline
 H3_RESOLUTION = 8
@@ -199,3 +202,25 @@ if do_task_2:
     # Timing analysis
     dt = time.perf_counter() - tic_start
     print(f"Task 2 took {dt:.1f} seconds to complete")
+
+# ---------------------------------------------
+# Task 5: Further Data Transformations
+# ---------------------------------------------
+if do_task_5:
+    if download_wind_data:
+        data.get_wind_data()
+
+    if rebuild_wind_data_db:
+        # Build the table from the wind data xlsx file
+        df = pd.read_excel("data/wind.xlsx", skiprows=2, header=[0, 1, 2]) 
+
+        # Flatten the 3 levels into one name, dropping empty "Unnamed: ..." parts and replacing some problematic characters
+        df.columns = [
+            "_".join(str(p).strip() for p in col if not str(p).startswith("Unnamed")).replace(" ", "_").replace("/", "p").lower()
+            for col in df.columns
+        ]
+
+        with sqlite3.connect(OUTPUT_DB) as con:
+            df.to_sql("wind", con, if_exists="replace", index=False)
+
+    

@@ -4,3 +4,5 @@ python-dotenv
 geopandas
 shapely
 h3
+requests
+openpyxl
