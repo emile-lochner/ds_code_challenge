@@ -284,7 +284,7 @@ if do_task_5:
         query_create_table = '''
             CREATE TABLE atlantis_requests (
                 notification_number INTEGER PRIMARY KEY,
-                creation_timestamp TEXT,
+                creation_timestamp_unix INTEGER,
                 wind_speed_mps REAL,
                 wind_direction_deg REAL
             )
@@ -293,10 +293,57 @@ if do_task_5:
         con.commit()
 
         query_insert_data = '''
-            INSERT INTO atlantis_requests (notification_number, creation_timestamp)
-            SELECT notification_number, creation_timestamp
+            INSERT INTO atlantis_requests (notification_number, creation_timestamp_unix)
+            SELECT notification_number, creation_timestamp_unix
             FROM requests
             WHERE pow(latitude - ?, 2) + pow(longitude - ?, 2) <= pow(?, 2)
         '''
         cur.execute(query_insert_data, (centroid_point.y, centroid_point.x, 1.0/60.0))
+        con.commit()
+
+        # Get the closest wind data for each record in the Atlantis requests subset
+        query_fetch = '''
+            SELECT 
+                notification_number,
+                creation_timestamp_unix
+            FROM atlantis_requests;
+        '''
+        cur.execute(query_fetch)
+        for row in cur.fetchall():
+            notification = row[0]
+            ts = row[1]
+
+            query_wind = '''
+                SELECT atlantis_aqm_site_wind_speed_v_mps, atlantis_aqm_site_wind_dir_v_deg, abs(wind.timestamp_unix - ?) as dt
+                FROM wind
+                WHERE dt <= 3600.0
+                ORDER BY dt ASC
+            '''
+            cur.execute(query_wind, (int(ts),))
+            wind_rows = cur.fetchall()
+
+            if wind_rows:
+                for wind_data in wind_rows:
+                    try:
+                        #print(wind_data)
+                        wind_speed = float(wind_data[0])
+                        wind_dir = float(wind_data[1])
+
+                        query_update = '''
+                            UPDATE atlantis_requests
+                            SET
+                                wind_speed_mps = ?,
+                                wind_direction_deg = ?
+                            WHERE 
+                                notification_number = ?;
+                        '''
+                        cur.execute(query_update, (wind_speed, wind_dir, notification))
+                        break
+
+                    except Exception as e:
+                        print(f"Could not update atlantis_request wind data: {e}")
+                
+            else:
+                print("No wind data for this timestep.")
+
         con.commit()
