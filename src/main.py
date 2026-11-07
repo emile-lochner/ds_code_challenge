@@ -7,6 +7,8 @@ import pandas as pd
 import time
 import requests
 import os
+from shapely.geometry import Polygon
+import datetime
 
 # This is to control which parts of the pipeline to run
 do_task_1 = False
@@ -14,7 +16,7 @@ do_task_2 = False
 rebuild_task_2_db = False
 do_task_5 = True
 download_wind_data = False
-rebuild_wind_data_db = False
+rebuild_wind_data_db = True
 
 # Constants that control parts of the pipeline
 H3_RESOLUTION = 8
@@ -98,7 +100,17 @@ if do_task_2:
         with sqlite3.connect(OUTPUT_DB) as con:
             df.to_sql("requests", con, if_exists="replace", index=False)
             con.execute("ALTER TABLE requests ADD COLUMN h3_level8_index TEXT DEFAULT '0'")
+            con.execute("ALTER TABLE requests ADD COLUMN creation_timestamp_unix INTEGER DEFAULT '0'")
             con.execute("CREATE INDEX IF NOT EXISTS idx_notification ON requests(notification_number)")
+
+            query_timestamp_unix = '''
+                UPDATE requests
+                SET creation_timestamp_unix = CAST(strftime('%s', src.creation_timestamp) AS INTEGER) 
+                FROM requests AS src
+                WHERE src.notification_number = requests.notification_number;
+            '''
+            con.execute(query_timestamp_unix)
+
             con.commit()
 
         # Build the table from the verification CSV file. This will be used to check our work.
@@ -214,16 +226,20 @@ if do_task_5:
 
     if rebuild_wind_data_db:
         # Build the table from the wind data xlsx file
-        df = pd.read_excel("data/wind.xlsx", skiprows=2, header=[0, 1, 2]) 
+        df = pd.read_excel("data/wind.xlsx", skiprows=2, header=[0, 1, 2], skipfooter=8) 
 
         # Flatten the 3 levels into one name, dropping empty "Unnamed: ..." parts and replacing some problematic characters
         df.columns = [
-            "_".join(str(p).strip() for p in col if not str(p).startswith("Unnamed")).replace(" ", "_").replace("/", "p").lower()
+            "_".join(str(p).strip() for p in col if not str(p).startswith("Unnamed")).replace(" ", "_").replace("/", "p").replace("&", "").replace("__", "").lower()
             for col in df.columns
         ]
 
+        dt = pd.to_datetime(df["datetime"], format="%d/%m/%Y %H:%M").dt.tz_localize("Africa/Johannesburg")
+        df["timestamp_unix"] = dt.map(pd.Timestamp.timestamp).astype(int)
+
         with sqlite3.connect(OUTPUT_DB) as con:
             df.to_sql("wind", con, if_exists="replace", index=False)
+            #con.execute("ALTER TABLE wind ADD COLUMN timestamp_unix INTEGER DEFAULT '0'")
 
 
     r = requests.get(
@@ -239,10 +255,48 @@ if do_task_5:
     )
     r.raise_for_status()
 
-    for place in r.json():
-        print(place["display_name"], place["type"], place["geojson"]["type"])
+    # for place in r.json():
+    #     print(place["display_name"], place["type"], place["geojson"]["type"])
 
     geom = r.json()[0]["geojson"]  # GeoJSON Polygon or MultiPolygon
-    coords = geom["coordinates"]   # [lon, lat] pairs
+    outline_coords = geom["coordinates"]   # [lon, lat] pairs
 
-    print(coords)
+    # Convert from the GeoJSON format to a list of tuples required by shapely
+    outline_sequence = []
+    for coords in outline_coords[0]:
+        outline_sequence.append(tuple(coords))
+
+    centroid_point = Polygon(outline_sequence).centroid
+    # centroid_point.x = longitude
+    # centroid_point.y = latitude
+    # print(centroid_point)
+
+    # Create the requests subset within 1 arcminute of this centroid
+    with sqlite3.connect(OUTPUT_DB) as con:
+        cur = con.cursor()
+
+        query_delete_table = '''
+            DROP TABLE IF EXISTS atlantis_requests;
+        '''
+        cur.execute(query_delete_table)
+        con.commit()
+
+        query_create_table = '''
+            CREATE TABLE atlantis_requests (
+                notification_number INTEGER PRIMARY KEY,
+                creation_timestamp TEXT,
+                wind_speed_mps REAL,
+                wind_direction_deg REAL
+            )
+        '''
+        cur.execute(query_create_table)
+        con.commit()
+
+        query_insert_data = '''
+            INSERT INTO atlantis_requests (notification_number, creation_timestamp)
+            SELECT notification_number, creation_timestamp
+            FROM requests
+            WHERE pow(latitude - ?, 2) + pow(longitude - ?, 2) <= pow(?, 2)
+        '''
+        cur.execute(query_insert_data, (centroid_point.y, centroid_point.x, 1.0/60.0))
+        con.commit()
