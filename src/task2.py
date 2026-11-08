@@ -5,7 +5,6 @@ import time
 from scipy.spatial import KDTree
 from tqdm import tqdm
 import numpy as np
-from shapely.geometry import Point, Polygon
 
 def create_service_requests_table():
     print(" - Building requests SQLite table from file.")

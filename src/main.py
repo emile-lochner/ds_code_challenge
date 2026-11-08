@@ -1,25 +1,5 @@
-# import data
-# import validation
-# import json
-# import h3
-# import sqlite3
-# import pandas as pd
-# import time
-# import requests
-# import os
-# from shapely.geometry import Polygon
-# import datetime
-
 import time
-import sqlite3
-import pandas as pd
-from shapely.geometry import Point, Polygon
-import json
-import numpy as np
-from scipy.spatial import KDTree
-from tqdm import tqdm
 from dotenv import load_dotenv
-import os
 
 import data
 import validation
@@ -29,7 +9,6 @@ import task5
 
 # Load environment variables from the .env file in the root directory
 load_dotenv()
-
 
 # Constants that control parts of the pipeline
 H3_RESOLUTION = 8
