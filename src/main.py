@@ -12,8 +12,6 @@ load_dotenv()
 
 # Constants that control parts of the pipeline
 H3_RESOLUTION = 8
-H3_LIMIT = -1 
-
 print("-"*60)
 print("CoCT Data Engineering Challenge")
 print("-"*60)
@@ -27,9 +25,9 @@ print("Task 1: Data Extraction")
 print("-"*60)
 tic_start = time.perf_counter()
 
-h3_cells_aws = task1.get_h3_cells_from_aws(H3_RESOLUTION, H3_LIMIT)
-h3_cells_file = task1.get_h3_cells_from_file("data/city-hex-polygons-8.geojson", H3_LIMIT)
-h3_cells_valid = validation.h3_validation(h3_cells_aws, h3_cells_file, H3_RESOLUTION)
+h3_cells_aws = task1.get_h3_cells_from_aws(H3_RESOLUTION)
+h3_cells_file = task1.get_h3_cells_from_file("data/city-hex-polygons-8.geojson")
+h3_cells_valid = validation.h3_validation(h3_cells_aws, h3_cells_file)
 
 task1.create_h3_cells_table()
 task1.save_h3_cells_to_db(h3_cells_valid)

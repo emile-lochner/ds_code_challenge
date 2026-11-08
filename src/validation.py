@@ -26,7 +26,7 @@ def _calculate_centroid_distance(cell:dict, ref_cell:dict) -> float:
 
     return distance.meters
 
-def _check_h3_structure(cell:dict, h3_resolution: int) -> bool:
+def _check_h3_structure(cell:dict) -> bool:
     '''
     We expect the cell dictionary to have a specific structure as shown below.
     Of these the most critical for our purpose is the index, centroid coordinates and the geometry.
@@ -139,7 +139,7 @@ def _convert_list_to_dict(cell_list:list) -> dict:
 
     return cell_dict
 
-def h3_validation(test_cells:list, reference_cells:list, h3_resolution:int, threshold=0.95,):
+def h3_validation(test_cells:list, reference_cells:list, threshold=0.95,):
     print(" - Validating H3 data against reference cells")
     tic_start = time.perf_counter()
 
@@ -151,7 +151,7 @@ def h3_validation(test_cells:list, reference_cells:list, h3_resolution:int, thre
     n_missing = 0
 
     for cell in test_cells:
-        if _check_h3_structure(cell, h3_resolution) == False:
+        if _check_h3_structure(cell) == False:
             # Cell does not have the required structure
             n_rejected += 1
             continue
@@ -164,7 +164,7 @@ def h3_validation(test_cells:list, reference_cells:list, h3_resolution:int, thre
             continue
 
         ref_cell = reference_dict[index]
-        if _check_h3_structure(ref_cell, h3_resolution) == False:
+        if _check_h3_structure(ref_cell) == False:
             # Reference cell does not have the correct structure
             n_missing += 1
             continue

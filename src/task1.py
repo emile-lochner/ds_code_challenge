@@ -6,7 +6,7 @@ import sqlite3
 
 import data
 
-def get_h3_cells_from_file(fpath: str, limit = -1):
+def get_h3_cells_from_file(fpath: str):
     print(" - Compiling H3 data from reference file.")
     tic_start = time.perf_counter()
 
@@ -17,11 +17,6 @@ def get_h3_cells_from_file(fpath: str, limit = -1):
         for cell in data["features"]:
             cell_list.append(cell)
 
-            if limit > 0:
-                limit -= 1
-                if limit == 0:
-                    break
-
     tic_end = time.perf_counter()
     dt = tic_end - tic_start
     print(f"Obtained {len(cell_list)} records.")
@@ -29,7 +24,7 @@ def get_h3_cells_from_file(fpath: str, limit = -1):
 
     return cell_list
 
-def get_h3_cells_from_aws(resolution: int, limit = -1):
+def get_h3_cells_from_aws(resolution: int):
     print(" - Fetching and compiling H3 data from AWS.")
     tic_start = time.perf_counter()
 
@@ -44,10 +39,7 @@ def get_h3_cells_from_aws(resolution: int, limit = -1):
 
     r = int(resolution)
 
-    if limit < 0:
-        query = f'''SELECT * FROM S3Object[*].features[*] f WHERE f.properties.resolution = {r}'''
-    else:
-        query = f'''SELECT * FROM S3Object[*].features[*] f WHERE f.properties.resolution = {r} LIMIT {limit}'''
+    query = f'''SELECT * FROM S3Object[*].features[*] f WHERE f.properties.resolution = {r}'''
 
     response = s3.select_object_content(
         Bucket="cct-ds-code-challenge-input-data",
