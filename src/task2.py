@@ -8,7 +8,7 @@ import numpy as np
 from shapely.geometry import Point, Polygon
 
 def create_service_requests_table():
-    print("\n - Building requests SQLite table from file.")
+    print(" - Building requests SQLite table from file.")
     tic_start = time.perf_counter()
 
     df = pd.read_csv(os.environ["SERVICE_REQUESTS_FPATH"], index_col=0)
@@ -36,7 +36,7 @@ def create_service_requests_table():
     print(f"Done: {dt:.1f} seconds.")
 
 def create_service_requests_validation_table():
-    print("\n - Building h3_level8_index validation SQLite table from file.")
+    print(" - Building h3_level8_index validation SQLite table from file.")
     tic_start = time.perf_counter()
 
     df = pd.read_csv(os.environ["SERVICE_REQUESTS_WITH_H3_FPATH"], usecols=["notification_number", "h3_level8_index"])
@@ -50,7 +50,7 @@ def create_service_requests_validation_table():
     print(f"Done: {dt:.1f} seconds.")
 
 def join_service_requests_with_h3_cells(h3_cells_polygons: dict):
-    print("\n - Join the service requests GPS coordinates with a H3 cell reference.")
+    print(" - Join the service requests GPS coordinates with a H3 cell reference.")
     tic_start = time.perf_counter()
 
     with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:
@@ -135,7 +135,7 @@ def join_service_requests_with_h3_cells(h3_cells_polygons: dict):
     print(f"Done: {dt:.1f} seconds.")
 
 def validate_h3_indices():
-    print("\n - Join the service requests GPS coordinates with a H3 cell reference.")
+    print(" - Join the service requests GPS coordinates with a H3 cell reference.")
     tic_start = time.perf_counter()
 
     with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:

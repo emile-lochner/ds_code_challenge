@@ -7,7 +7,7 @@ import sqlite3
 import data
 
 def get_h3_cells_from_file(fpath: str, limit = -1):
-    print("\n - Compiling H3 data from reference file.")
+    print(" - Compiling H3 data from reference file.")
     tic_start = time.perf_counter()
 
     cell_list = []
@@ -30,7 +30,7 @@ def get_h3_cells_from_file(fpath: str, limit = -1):
     return cell_list
 
 def get_h3_cells_from_aws(resolution: int, limit = -1):
-    print("\n - Fetching and compiling H3 data from AWS.")
+    print(" - Fetching and compiling H3 data from AWS.")
     tic_start = time.perf_counter()
 
     cell_list = []
@@ -75,7 +75,7 @@ def get_h3_cells_from_aws(resolution: int, limit = -1):
     return cell_list
 
 def create_h3_cells_table():
-    print("\n - Create h3_cells table in database.")
+    print(" - Create h3_cells table in database.")
     tic_start = time.perf_counter()
 
     # Build a sqlite database to store the valid cell data
@@ -107,7 +107,7 @@ def create_h3_cells_table():
     print(f"Done: {dt:.1f} seconds.")
 
 def save_h3_cells_to_db(cells:list):
-    print("\n - Storing valid h3_cells in database.")
+    print(" - Storing valid h3_cells in database.")
     tic_start = time.perf_counter()
 
     with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:

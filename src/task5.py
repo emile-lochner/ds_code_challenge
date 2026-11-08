@@ -7,7 +7,7 @@ from shapely.geometry import Polygon
 from tqdm import tqdm
 
 def get_wind_data():
-    print("\n - Fetching wind speed and direction data.")
+    print(" - Fetching wind speed and direction data.")
     tic_start = time.perf_counter()
     
     url = "https://www.arcgis.com/sharing/rest/content/items/31ef242a23484e79bbb19d6b29203179/data"
@@ -41,7 +41,7 @@ def get_wind_data():
     print(f"Done: {dt:.1f} seconds.")
 
 def build_database_from_wind_xlsx():
-    print("\n - Building wind data table from spreadsheet.")
+    print(" - Building wind data table from spreadsheet.")
     tic_start = time.perf_counter()
     
     # Build the table from the wind data xlsx file
@@ -65,7 +65,7 @@ def build_database_from_wind_xlsx():
     print(f"Done: {dt:.1f} seconds.")
 
 def get_suburb_centroid_coords(suburb: str) -> dict:
-    print(f"\n - Get centroid coordinates for \'{suburb}\'")
+    print(f" - Get centroid coordinates for \'{suburb}\'")
     tic_start = time.perf_counter()
     
     r = requests.get(
@@ -109,7 +109,7 @@ def get_suburb_centroid_coords(suburb: str) -> dict:
     return centroid
 
 def create_requests_subset_for_wind_data(centroid_point: dict, arcminute_radius: float):
-    print(f"\n - Create service requests subset table for wind data.")
+    print(f" - Create service requests subset table for wind data.")
     tic_start = time.perf_counter()
     
     # Create the requests subset within 1 arcminute of this centroid
@@ -155,7 +155,7 @@ def create_requests_subset_for_wind_data(centroid_point: dict, arcminute_radius:
     print(f"Done: {dt:.1f} seconds.")
 
 def add_wind_data_to_subset():
-    print(f"\n - Populate requests subset with wind data.")
+    print(f" - Populate requests subset with wind data.")
     tic_start = time.perf_counter()
     
     # Get the closest wind data for each record in the Atlantis requests subset
@@ -233,7 +233,7 @@ def add_wind_data_to_subset():
     print(f"Done: {dt:.1f} seconds.")
 
 def anonymise_augmented_subsample_data():
-    print(f"\n - Anonymise augmented subsample data.")
+    print(f" - Anonymise augmented subsample data.")
     tic_start = time.perf_counter()
 
     with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:
@@ -315,6 +315,69 @@ def anonymise_augmented_subsample_data():
 
         cur.execute(query_insert)
         con.commit()
+
+    tic_end = time.perf_counter()
+    dt = tic_end - tic_start
+    print(f"Done: {dt:.1f} seconds.")
+
+def export_anonymous_csv_file():
+    print(" - Export anonymous CSV file.")
+    tic_start = time.perf_counter()
+
+    os.makedirs("export", exist_ok=True)
+
+    f_out = open("export/anonymous.csv", 'w')
+    header = [
+        "creation_timestamp_approx",
+        "completion_timestamp_approx",
+        "h3_level8_index",
+        "directorate",
+        "department",
+        "branch",
+        "section",
+        "code_group",
+        "code",
+        "cause_code_group",
+        "cause_code",
+        "official_suburb",
+        "wind_speed_mps",
+        "wind_direction_deg"
+        ]
+    f_out.write(",".join(header) + "\n")
+
+    with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:
+        cur = con.cursor()
+
+        query_fetch = '''
+            SELECT
+                creation_timestamp_approx,
+                completion_timestamp_approx,
+                h3_level8_index,
+                directorate,
+                department,
+                branch,
+                section,
+                code_group,
+                code,
+                cause_code_group,
+                cause_code,
+                official_suburb,
+                wind_speed_mps,
+                wind_direction_deg
+            FROM
+                anonymous_requests;
+        '''
+
+        cur.execute(query_fetch)
+        while True:
+            row = cur.fetchone()
+            if row == None:
+                break
+
+            line = ",".join("" if v is None else str(v) for v in row)
+            f_out.write(line + "\n")
+
+    f_out.close()
 
     tic_end = time.perf_counter()
     dt = tic_end - tic_start

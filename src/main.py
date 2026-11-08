@@ -38,6 +38,9 @@ H3_LIMIT = -1
 print("-"*60)
 print("CoCT Data Engineering Challenge")
 print("-"*60)
+
+data.download_data_files()
+
 # ---------------------------------------------
 # Task 1: Data Extraction
 # ---------------------------------------------
@@ -93,6 +96,7 @@ atlantis_centroid = task5.get_suburb_centroid_coords("Atlantis, Cape Town, South
 task5.create_requests_subset_for_wind_data(atlantis_centroid, arcminute_radius=1.0)
 task5.add_wind_data_to_subset()
 task5.anonymise_augmented_subsample_data()
+task5.export_anonymous_csv_file()
 
 tic_end = time.perf_counter()
 dt = tic_end - tic_start
