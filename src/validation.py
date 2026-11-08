@@ -142,7 +142,7 @@ def _convert_list_to_dict(cell_list:list) -> dict:
     return cell_dict
 
 def h3_validation(test_cells:list, reference_cells:list, h3_resolution:int, threshold=0.95,):
-    print("\n - Validating H3 data against reference cells")
+    print(" - Validating H3 data against reference cells")
     tic_start = time.perf_counter()
 
     valid_cells = []
