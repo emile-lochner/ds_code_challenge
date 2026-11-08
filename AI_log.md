@@ -1,10 +1,9 @@
 # AI Conversation Log
 
 Exported conversation between the user and Claude (Anthropic), covering Fri 2026-11-06 to Sun 2026-11-08 (timezone Africa/Johannesburg, UTC+02:00).
-Model used: Sonnet 5.5 (medium) via the browser interface
-Tokens used: Not Available 
-
-The AI was primarily used in the same way that I use to Google for code snippets or look for guidance on Stackoverflow. I use AI as a learning assistant rather than a tool that will do the work for me.
+**Model used:** Sonnet 5.5 (medium) via the browser interface
+**Tokens used:** Not Available 
+The AI model was primarily used in the same way that I use to Google to look for code snippets or guidance on Stackoverflow. I use AI as a learning assistant rather than a tool that will do the work for me.
 ---
 
 ## 1. S3 Select with boto3
