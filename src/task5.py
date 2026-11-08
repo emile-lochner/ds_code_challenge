@@ -374,7 +374,7 @@ def export_anonymous_csv_file():
             if row == None:
                 break
 
-            line = ",".join("" if v is None else str(v) for v in row)
+            line = ",".join("" if v is None else '"' + str(v) + '"' for v in row)
             f_out.write(line + "\n")
 
     f_out.close()
