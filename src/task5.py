@@ -231,3 +231,91 @@ def add_wind_data_to_subset():
     tic_end = time.perf_counter()
     dt = tic_end - tic_start
     print(f"Done: {dt:.1f} seconds.")
+
+def anonymise_augmented_subsample_data():
+    print(f"\n - Anonymise augmented subsample data.")
+    tic_start = time.perf_counter()
+
+    with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:
+        cur = con.cursor()
+        
+        # Delete the old table if it exists
+        query_delete_table = '''
+            DROP TABLE IF EXISTS anonymous_requests;
+        '''
+        cur.execute(query_delete_table)
+        con.commit()
+
+        # Create anonymised subset table
+        query_create_table = '''
+            CREATE TABLE anonymous_requests (
+                creation_timestamp_approx TEXT,
+                completion_timestamp_approx TEXT,
+                h3_level8_index TEXT,
+                directorate TEXT,
+                department TEXT,
+                branch TEXT,
+                section TEXT,
+                code_group TEXT,
+                code TEXT,
+                cause_code_group TEXT,
+                cause_code TEXT,
+                official_suburb TEXT,
+                wind_speed_mps REAL,
+                wind_direction_deg REAL
+            );
+        '''
+        cur.execute(query_create_table)
+        con.commit()
+
+        # Add data
+        query_insert = '''
+            INSERT INTO anonymous_requests (
+                creation_timestamp_approx,
+                completion_timestamp_approx,
+                h3_level8_index,
+                directorate,
+                department,
+                branch,
+                section,
+                code_group,
+                code,
+                cause_code_group,
+                cause_code,
+                official_suburb,
+                wind_speed_mps,
+                wind_direction_deg
+            )
+            SELECT 
+                strftime(
+                        '%Y-%m-%d %H:%M:%S',
+                        CAST(ROUND((CAST(strftime('%s', substr(req.creation_timestamp, 1, 19)) AS INTEGER) - 10800) / 21600.0) * 21600 + 10800 AS INTEGER),
+                        'unixepoch'
+                    ) || substr(req.creation_timestamp, 20) as creation_timestamp_approx,
+                strftime(
+                        '%Y-%m-%d %H:%M:%S',
+                        CAST(ROUND((CAST(strftime('%s', substr(req.completion_timestamp, 1, 19)) AS INTEGER) - 10800) / 21600.0) * 21600 + 10800 AS INTEGER),
+                        'unixepoch'
+                    ) || substr(req.completion_timestamp, 20) as completion_timestamp_approx,
+                req.h3_level8_index,
+                req.directorate,
+                req.department,
+                req.branch,
+                req.section,
+                req.code_group,
+                req.code,
+                req.cause_code_group,
+                req.cause_code,
+                req.official_suburb,
+                subs.wind_speed_mps,
+                subs.wind_direction_deg
+            FROM requests AS req
+            INNER JOIN requests_subset AS subs ON req.notification_number = subs.notification_number;
+        '''
+
+        cur.execute(query_insert)
+        con.commit()
+
+    tic_end = time.perf_counter()
+    dt = tic_end - tic_start
+    print(f"Done: {dt:.1f} seconds.")

@@ -71,10 +71,10 @@ print("\nTask 2: Initial Data Transformation")
 print("-"*60)
 tic_start = time.perf_counter()
 
-# task2.create_service_requests_table()
-# task2.create_service_requests_validation_table()
-# task2.join_service_requests_with_h3_cells(h3_cells_polygons)
-# task2.validate_h3_indices()
+task2.create_service_requests_table()
+task2.create_service_requests_validation_table()
+task2.join_service_requests_with_h3_cells(h3_cells_polygons)
+task2.validate_h3_indices()
 
 tic_end = time.perf_counter()
 dt = tic_end - tic_start
@@ -92,6 +92,7 @@ task5.build_database_from_wind_xlsx()
 atlantis_centroid = task5.get_suburb_centroid_coords("Atlantis, Cape Town, South Africa")
 task5.create_requests_subset_for_wind_data(atlantis_centroid, arcminute_radius=1.0)
 task5.add_wind_data_to_subset()
+task5.anonymise_augmented_subsample_data()
 
 tic_end = time.perf_counter()
 dt = tic_end - tic_start
