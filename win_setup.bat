@@ -12,7 +12,7 @@ echo --------------------------------------
 echo Creating Python Virtual Environment
 echo --------------------------------------
 @echo on
-::python -m venv .venv\pyenv
+python -m venv .venv\pyenv
 call .venv\pyenv\Scripts\activate.bat
 @echo off
 
@@ -20,13 +20,12 @@ echo --------------------------------------
 echo Upgrading pip
 echo --------------------------------------
 @echo on
-::python -m pip install --upgrade pip
+python -m pip install --upgrade pip
 @echo off
 
 echo --------------------------------------
 echo Installing Python Packages
 echo --------------------------------------
-:: pip install -r setup\requirements.txt
 @echo on
 python -m pip install -r setup\requirements.txt
 @echo off
