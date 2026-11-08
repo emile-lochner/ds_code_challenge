@@ -135,7 +135,7 @@ def join_service_requests_with_h3_cells(h3_cells_polygons: dict):
     print(f"Done: {dt:.1f} seconds.")
 
 def validate_h3_indices():
-    print(" - Join the service requests GPS coordinates with a H3 cell reference.")
+    print(" - Join the service requests GPS coordinates with a H3 cell index.")
     tic_start = time.perf_counter()
 
     with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:
@@ -169,3 +169,24 @@ def validate_h3_indices():
     tic_end = time.perf_counter()
     dt = tic_end - tic_start
     print(f"Done: {dt:.1f} seconds.")
+
+def check_h3_assignment_success_threshold(threshold: float):
+    print(" - Check cell assignment threshold.")
+    with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:
+        cur = con.cursor()
+
+        success_fraction = '''
+            SELECT (
+                SELECT count(*)
+                FROM requests
+                WHERE 
+                h3_level8_index != '0') / CAST(count(*) AS REAL) 
+            FROM requests;
+        '''
+        cur.execute(success_fraction)
+        rows = cur.fetchone()
+
+        print(f"{rows[0]*100:.1f}% of service requests could be assigned a H3 index.")
+
+        if rows[0] < threshold:
+            raise Exception(f"Cell H3 assignment threshold of {threshold*100:.1f}% not met.")

@@ -1,4 +1,4 @@
-# Setting Up
+# Setting Up and Running
 ## Windows
 Your computer should have Python 3.12 or higher installed and correctly configured.
 Once this is done, simply double click on the `win_setup.bat` script to create a virtual python environment and download all required packages.
@@ -17,7 +17,7 @@ bash linux_run.sh
 ```
 to run the data pipeline.
 
-# Task 1
+# Task 1: Data Extraction
 ## GeoJSON Schema and Validation
 We expect the cell dictionary to have a specific structure as shown below:
 
@@ -46,3 +46,6 @@ First, we calculate a distance score. For every 10 meter difference between the 
 Second, we calculate the polygon overlap score. The score is defined by the fraction of the test polygon area that overlaps the area of the reference polygon area. Complete overlap would produce a score of 1.0, while no overlap would produce a score of 0.0.
 
 To calculate the total score we multiply the overlap and distance score. The total score is then compared with a threshold to decide if it should be rejected or not.
+
+## Task 2: Initial Data Transformation
+I relied heavily on SQLite databases for the data processing and storage. SQL is an very powerful tool that is essential to any data engineering environment and I felt it important to demonstrate my familiarity with databases. Databases provide reliable storage for all of a project's needs and allows reports to be generated without the need to run the data pipeline code. Letos (https://letos.org/) is an OpenSource program available for both Windows and Linux that will allow you to browse the database and create your own queries.

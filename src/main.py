@@ -56,6 +56,7 @@ tic_start = time.perf_counter()
 task2.create_service_requests_table()
 task2.create_service_requests_validation_table()
 task2.join_service_requests_with_h3_cells(h3_cells_polygons)
+task2.check_h3_assignment_success_threshold(0.7)
 task2.validate_h3_indices()
 
 tic_end = time.perf_counter()
