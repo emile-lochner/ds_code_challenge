@@ -6,6 +6,21 @@ from geopy.distance import geodesic
 from shapely.geometry import Polygon
 
 def _calculate_polygon_overlap(cell:dict, ref_cell:dict) -> float:
+    """Calculate the fraction of the reference cell's area covered by the cell.
+
+    Parameters
+    ----------
+    cell : dict
+        H3 cell feature to test.
+    ref_cell : dict
+        Reference H3 cell feature.
+
+    Returns
+    -------
+    float
+        Intersection area divided by the reference cell area.
+    """
+
     cell_outline = data.get_cell_vertices(cell)
     ref_outline = data.get_cell_vertices(ref_cell)
 
@@ -16,6 +31,21 @@ def _calculate_polygon_overlap(cell:dict, ref_cell:dict) -> float:
     return intersection / ref_poly.area
 
 def _calculate_centroid_distance(cell:dict, ref_cell:dict) -> float:
+    """Calculate the geodesic distance between two cell centroids.
+
+    Parameters
+    ----------
+    cell : dict
+        H3 cell feature to test.
+    ref_cell : dict
+        Reference H3 cell feature.
+
+    Returns
+    -------
+    float
+        Distance in metres.
+    """
+
     cell_centroid = data.get_cell_centroid(cell)
     ref_centroid = data.get_cell_centroid(ref_cell)
 
@@ -55,7 +85,7 @@ def _check_h3_structure(cell:dict) -> bool:
 
     if "index" not in cell["properties"]:
         print("Invalid: Cell does not contain keyword 'index'.")
-        False
+        return False
 
     if "centroid_lat" not in cell["properties"]:
         print("Invalid: Cell does not contain keyword 'properties:centroid_lat'.")
@@ -115,12 +145,13 @@ def _check_h3_structure(cell:dict) -> bool:
         return False
 
     # Use the h3 package to test that the index is correct for the supplied centroid coordinates
+    # NOTE: Installing the h3 package caused issues on some computers when testing. Hence, this was removed.
     # Get the index from the cell
-    index = cell["properties"]["index"]
-    centroid = {
-        "lat": cell["properties"]["centroid_lat"],
-        "lon": cell["properties"]["centroid_lon"]
-    }
+    # index = cell["properties"]["index"]
+    # centroid = {
+    #     "lat": cell["properties"]["centroid_lat"],
+    #     "lon": cell["properties"]["centroid_lon"]
+    # }
 
     # Check that the index is correct from the centroid coordinates
     # if h3.latlng_to_cell(centroid["lat"], centroid["lon"], h3_resolution) != index:
@@ -132,6 +163,19 @@ def _check_h3_structure(cell:dict) -> bool:
 
 
 def _convert_list_to_dict(cell_list:list) -> dict:
+    """Convert a list of H3 cells to a dictionary keyed by cell index.
+
+    Parameters
+    ----------
+    cell_list : list
+        H3 cell features.
+
+    Returns
+    -------
+    dict
+        Mapping of cell index to cell feature.
+    """
+
     cell_dict = {}
     for cell in cell_list:
         index = data.get_cell_index(cell)
@@ -140,6 +184,23 @@ def _convert_list_to_dict(cell_list:list) -> dict:
     return cell_dict
 
 def h3_validation(test_cells:list, reference_cells:list, threshold=0.95,):
+    """Validate H3 cells against reference cells using centroid distance and polygon overlap.
+
+    Parameters
+    ----------
+    test_cells : list
+        H3 cell features to validate.
+    reference_cells : list
+        Reference H3 cell features.
+    threshold : float, optional
+        Minimum combined score for a cell to be accepted. Default is 0.95.
+
+    Returns
+    -------
+    list
+        The cells that passed validation.
+    """
+
     print(" - Validating H3 data against reference cells")
     tic_start = time.perf_counter()
 

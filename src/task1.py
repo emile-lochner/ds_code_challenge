@@ -7,14 +7,27 @@ import sqlite3
 import data
 
 def get_h3_cells_from_file(fpath: str):
+    """Load H3 cell features from a local GeoJSON file.
+
+    Parameters
+    ----------
+    fpath : str
+        Path to the GeoJSON file.
+
+    Returns
+    -------
+    list
+        H3 cell features.
+    """
+
     print(" - Compiling H3 data from reference file.")
     tic_start = time.perf_counter()
 
     cell_list = []
     with open(fpath, 'r') as fp:
-        data = json.load(fp)
+        file_data = json.load(fp)
 
-        for cell in data["features"]:
+        for cell in file_data["features"]:
             cell_list.append(cell)
 
     tic_end = time.perf_counter()
@@ -25,6 +38,19 @@ def get_h3_cells_from_file(fpath: str):
     return cell_list
 
 def get_h3_cells_from_aws(resolution: int):
+    """Fetch H3 cell features of a given resolution from S3 using S3 Select.
+
+    Parameters
+    ----------
+    resolution : int
+        H3 resolution to select.
+
+    Returns
+    -------
+    list
+        H3 cell features.
+    """
+
     print(" - Fetching and compiling H3 data from AWS.")
     tic_start = time.perf_counter()
 
@@ -67,6 +93,8 @@ def get_h3_cells_from_aws(resolution: int):
     return cell_list
 
 def create_h3_cells_table():
+    """Create an empty `h3_cells` table in the database, replacing any existing one."""
+
     print(" - Create h3_cells table in database.")
     tic_start = time.perf_counter()
 
@@ -99,6 +127,14 @@ def create_h3_cells_table():
     print(f"Done: {dt:.1f} seconds.")
 
 def save_h3_cells_to_db(cells:list):
+    """Insert H3 cells into the `h3_cells` table.
+
+    Parameters
+    ----------
+    cells : list
+        Valid H3 cell features to store.
+    """
+
     print(" - Storing valid h3_cells in database.")
     tic_start = time.perf_counter()
 

@@ -5,6 +5,19 @@ import gzip
 import shutil
 
 def geojson_to_polygon(geojson: list) -> Polygon:
+    """Convert GeoJSON polygon coordinates to a shapely Polygon.
+
+    Parameters
+    ----------
+    geojson : list
+        GeoJSON polygon coordinates (list of rings).
+
+    Returns
+    -------
+    shapely.geometry.Polygon
+        Polygon built from the outer ring.
+    """
+
     cell_tuples = []
     for coord in geojson[0]:
         cell_tuples.append(tuple(coord))
@@ -13,9 +26,35 @@ def geojson_to_polygon(geojson: list) -> Polygon:
     return cell_poly
 
 def get_cell_index(cell: dict):
+    """Get the H3 index of a cell.
+
+    Parameters
+    ----------
+    cell : dict
+        H3 cell feature.
+
+    Returns
+    -------
+    str
+        The cell index.
+    """
+
     return cell["properties"]["index"]
 
 def get_cell_centroid(cell: dict):
+    """Get the centroid coordinates of a cell.
+
+    Parameters
+    ----------
+    cell : dict
+        H3 cell feature.
+
+    Returns
+    -------
+    dict
+        Centroid with keys "lat" and "lon".
+    """
+
     centroid = {
         "lat": cell["properties"]["centroid_lat"],
         "lon": cell["properties"]["centroid_lon"]
@@ -23,10 +62,24 @@ def get_cell_centroid(cell: dict):
     return centroid
 
 def get_cell_vertices(cell: dict):
+    """Get the polygon coordinates of a cell.
+
+    Parameters
+    ----------
+    cell : dict
+        H3 cell feature.
+
+    Returns
+    -------
+    list
+        GeoJSON polygon coordinates.
+    """
+
     return cell["geometry"]["coordinates"]
 
-
 def download_data_files():
+    """Download the hex polygon, service request and validation files into `data/`, skipping existing ones and decompressing the gzip files."""
+    
     print(" - Downloading required data files.")
     os.makedirs("data", exist_ok=True)
 

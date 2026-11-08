@@ -8,6 +8,8 @@ import numpy as np
 from shapely.geometry import Point
 
 def create_service_requests_table():
+    """Load the service requests CSV into the `requests` table and add H3 and unix timestamp columns."""
+
     print(" - Building requests SQLite table from file.")
     tic_start = time.perf_counter()
 
@@ -36,13 +38,15 @@ def create_service_requests_table():
     print(f"Done: {dt:.1f} seconds.")
 
 def create_service_requests_validation_table():
+    """Load the notification number and H3 index reference CSV into the `h3_validation` table."""
+
     print(" - Building h3_level8_index validation SQLite table from file.")
     tic_start = time.perf_counter()
 
     df = pd.read_csv(os.environ["SERVICE_REQUESTS_WITH_H3_FPATH"], usecols=["notification_number", "h3_level8_index"])
     with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:
         df.to_sql("h3_validation", con, if_exists="replace", index=False)
-        con.execute("CREATE INDEX IF NOT EXISTS idx_notification ON requests(notification_number)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_notification ON h3_validation(notification_number)")
         con.commit()
 
     tic_end = time.perf_counter()
@@ -50,6 +54,14 @@ def create_service_requests_validation_table():
     print(f"Done: {dt:.1f} seconds.")
 
 def join_service_requests_with_h3_cells(h3_cells_polygons: dict):
+    """Assign each service request an H3 level 8 index using a KD tree and polygon containment.
+
+    Parameters
+    ----------
+    h3_cells_polygons : dict
+        Mapping of H3 cell index to its shapely Polygon.
+    """
+
     print(" - Join the service requests GPS coordinates with a H3 cell reference.")
     tic_start = time.perf_counter()
 
@@ -135,7 +147,9 @@ def join_service_requests_with_h3_cells(h3_cells_polygons: dict):
     print(f"Done: {dt:.1f} seconds.")
 
 def validate_h3_indices():
-    print(" - Join the service requests GPS coordinates with a H3 cell index.")
+    """Print the number of requests with an incorrect H3 index and the number left unassigned."""
+
+    print(" - Check assigned H3 indices.")
     tic_start = time.perf_counter()
 
     with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:
@@ -171,6 +185,19 @@ def validate_h3_indices():
     print(f"Done: {dt:.1f} seconds.")
 
 def check_h3_assignment_success_threshold(threshold: float):
+    """Check that the fraction of requests with an H3 index meets a minimum threshold.
+
+    Parameters
+    ----------
+    threshold : float
+        Minimum acceptable success fraction (0 to 1).
+
+    Raises
+    ------
+    Exception
+        If the assignment fraction is below `threshold`.
+    """
+
     print(" - Check cell assignment threshold.")
     with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:
         cur = con.cursor()

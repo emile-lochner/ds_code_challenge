@@ -7,6 +7,8 @@ from shapely.geometry import Polygon
 from tqdm import tqdm
 
 def get_wind_data():
+    """Download the wind data spreadsheet, resuming partial downloads, with up to 10 attempts."""
+
     print(" - Fetching wind speed and direction data.")
     tic_start = time.perf_counter()
     
@@ -41,6 +43,8 @@ def get_wind_data():
     print(f"Done: {dt:.1f} seconds.")
 
 def build_database_from_wind_xlsx():
+    """Read the wind spreadsheet, clean the column names, add a unix timestamp and store it in the `wind` table."""
+
     print(" - Building wind data table from spreadsheet.")
     tic_start = time.perf_counter()
     
@@ -65,6 +69,19 @@ def build_database_from_wind_xlsx():
     print(f"Done: {dt:.1f} seconds.")
 
 def get_suburb_centroid_coords(suburb: str) -> dict:
+    """Look up a suburb's outline via OpenStreetMap and compute its centroid.
+
+    Parameters
+    ----------
+    suburb : str
+        Name of the suburb to search for.
+
+    Returns
+    -------
+    dict
+        Centroid coordinates with keys "lat" and "lon".
+    """
+
     print(f" - Get centroid coordinates for \'{suburb}\'")
     tic_start = time.perf_counter()
     
@@ -109,6 +126,16 @@ def get_suburb_centroid_coords(suburb: str) -> dict:
     return centroid
 
 def create_requests_subset_for_wind_data(centroid_point: dict, arcminute_radius: float):
+    """Create the `requests_subset` table with requests within a radius of a centroid.
+
+    Parameters
+    ----------
+    centroid_point : dict
+        Centre point with keys "lat" and "lon".
+    arcminute_radius : float
+        Search radius in arcminutes.
+    """
+
     print(f" - Create service requests subset table for wind data.")
     tic_start = time.perf_counter()
     
@@ -155,6 +182,8 @@ def create_requests_subset_for_wind_data(centroid_point: dict, arcminute_radius:
     print(f"Done: {dt:.1f} seconds.")
 
 def add_wind_data_to_subset():
+    """Add the wind speed and direction closest in time (within 1 hour) to each request in `requests_subset`."""
+
     print(f" - Populate requests subset with wind data.")
     tic_start = time.perf_counter()
     
@@ -233,6 +262,8 @@ def add_wind_data_to_subset():
     print(f"Done: {dt:.1f} seconds.")
 
 def anonymise_augmented_subsample_data():
+    """Create the `anonymous_requests` table with timestamps rounded to 6-hour intervals and identifying columns removed."""
+
     print(f" - Anonymise augmented subsample data.")
     tic_start = time.perf_counter()
 
@@ -321,6 +352,8 @@ def anonymise_augmented_subsample_data():
     print(f"Done: {dt:.1f} seconds.")
 
 def export_anonymous_csv_file():
+    """Export the `anonymous_requests` table to `export/anonymous.csv`."""
+    
     print(" - Export anonymous CSV file.")
     tic_start = time.perf_counter()
 
