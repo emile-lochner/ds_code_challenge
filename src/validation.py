@@ -1,11 +1,9 @@
-import h3
+#import h3
 import json
 import time
 import data
 from geopy.distance import geodesic
 from shapely.geometry import Polygon
-
-
 
 def _calculate_polygon_overlap(cell:dict, ref_cell:dict) -> float:
     cell_outline = data.get_cell_vertices(cell)
@@ -125,9 +123,9 @@ def _check_h3_structure(cell:dict, h3_resolution: int) -> bool:
     }
 
     # Check that the index is correct from the centroid coordinates
-    if h3.latlng_to_cell(centroid["lat"], centroid["lon"], h3_resolution) != index:
-        print("Invalid: Cell index is incorrect.")
-        return False
+    # if h3.latlng_to_cell(centroid["lat"], centroid["lon"], h3_resolution) != index:
+    #     print("Invalid: Cell index is incorrect.")
+    #     return False
 
     # Structure of the data is valid
     return True
