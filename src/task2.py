@@ -104,9 +104,10 @@ def join_service_requests_with_h3_cells(h3_cells_polygons: dict):
         
         cur_fetch.execute(query_get_requests)
         for n in tqdm(range(N_rows), desc="Progress"):
+            # Since the number of records is large we fetch one at a time to save on memory requirements.
             row = cur_fetch.fetchone()
             if row is None:
-                break
+                continue
 
             notification = row[0]
             lat = row[1]
@@ -126,7 +127,44 @@ def join_service_requests_with_h3_cells(h3_cells_polygons: dict):
                     WHERE notification_number = ?;
                 '''
                 cur_update.execute(update_query, (cell_index, notification))
+
         con.commit()
+
+    tic_end = time.perf_counter()
+    dt = tic_end - tic_start
+    print(f"Done: {dt:.1f} seconds.")
+
+def validate_h3_indices():
+    print("\n - Join the service requests GPS coordinates with a H3 cell reference.")
+    tic_start = time.perf_counter()
+
+    with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:
+        cur = con.cursor()
+
+        # Validate that all the h3_level8_indices are correct based on the validation file.
+        validation_query = '''
+            SELECT count(*)
+            FROM h3_validation AS h3v
+            INNER JOIN requests AS req ON req.notification_number = h3v.notification_number
+            WHERE req.h3_level8_index != h3v.h3_level8_index
+            AND req.h3_level8_index != '0';
+        '''
+
+        cur.execute(validation_query)
+        rows = cur.fetchone()
+        print(f"{rows[0]} records have been assigned an incorrect h3_level8_index.")
+
+        # Display how many rows could not be assigned a h3_level8_cell
+        no_index_query = '''
+            SELECT count(*)
+            FROM requests
+            WHERE 
+                h3_level8_index == '0';
+        '''
+
+        cur.execute(no_index_query)
+        rows = cur.fetchone()
+        print(f"{rows[0]} records could not be assigned a h3_level8_index.")
 
     tic_end = time.perf_counter()
     dt = tic_end - tic_start

@@ -25,6 +25,7 @@ import data
 import validation
 import task1
 import task2
+import task5
 
 # Load environment variables from the .env file in the root directory
 load_dotenv()
@@ -32,7 +33,7 @@ load_dotenv()
 
 # Constants that control parts of the pipeline
 H3_RESOLUTION = 8
-H3_LIMIT = -1
+H3_LIMIT = -1 
 
 print("-"*60)
 print("CoCT Data Engineering Challenge")
@@ -70,10 +71,28 @@ print("\nTask 2: Initial Data Transformation")
 print("-"*60)
 tic_start = time.perf_counter()
 
-task2.create_service_requests_table()
-task2.create_service_requests_validation_table()
-task2.join_service_requests_with_h3_cells(h3_cells_polygons)
+# task2.create_service_requests_table()
+# task2.create_service_requests_validation_table()
+# task2.join_service_requests_with_h3_cells(h3_cells_polygons)
+# task2.validate_h3_indices()
 
 tic_end = time.perf_counter()
 dt = tic_end - tic_start
 print(f"\nTime taken for Task 2: {dt:.1f} seconds.")
+
+# ---------------------------------------------
+# Task 5: Further Data Transformations
+# ---------------------------------------------
+print("\nTask 5: Further Data Transformations")
+print("-"*60)
+tic_start = time.perf_counter()
+
+task5.get_wind_data()
+task5.build_database_from_wind_xlsx()
+atlantis_centroid = task5.get_suburb_centroid_coords("Atlantis, Cape Town, South Africa")
+task5.create_requests_subset_for_wind_data(atlantis_centroid, arcminute_radius=1.0)
+task5.add_wind_data_to_subset()
+
+tic_end = time.perf_counter()
+dt = tic_end - tic_start
+print(f"\nTime taken for Task5: {dt:.1f} seconds.")
