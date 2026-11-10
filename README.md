@@ -6,6 +6,9 @@ Once this script has successfully run, double click on `win_run.bat` to run the 
 
 ## Linux
 Your computer should have Python 3.12 or higher installed and correctly configured.
+On Ubuntu the venv module is packaged separately; install it if missing:
+`sudo apt update && sudo apt install -y python3 python3-venv python3-pip`
+
 In the terminal browse to the root directory of this repository and run the command
 ```bash
 bash linux_setup.sh
