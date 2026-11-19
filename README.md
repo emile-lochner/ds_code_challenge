@@ -40,6 +40,8 @@ We expect the cell dictionary to have a specific structure as shown below:
 }
 ```
 
+**Review:** I have obtained the official GeoJSON schema for a Feature from  `https://geojson.org/schema/Feature.json`. 
+
 Of these the most critical for our purpose is the index, centroid coordinates and the geometry. If the cell is missing any of these properties it will be rejected. In practice, if we had either the centroid coordinates or the geometry polygon, we could recover the missing data by using the h3 python library (https://h3geo.org). However, it was considered out of scope for the purposes of this assignment.
 
 Furthermore, the data was expected to be the types specified and if not, would be considered corrupted and rejected. Once those hard cuts were completed we calculated two scores. To calculate the scores we rely on a reference cell which we obtained from the provided `city-hex-polygons-8.geojson` file. 

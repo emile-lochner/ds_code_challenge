@@ -3,7 +3,9 @@ import json
 import time
 import data
 from geopy.distance import geodesic
-from shapely.geometry import Polygon
+from jsonschema import Draft202012Validator
+
+
 
 def _calculate_polygon_overlap(cell:dict, ref_cell:dict) -> float:
     """Calculate the fraction of the reference cell's area covered by the cell.
@@ -56,6 +58,15 @@ def _calculate_centroid_distance(cell:dict, ref_cell:dict) -> float:
 
     return distance.meters
 
+def get_schema_validator(schema_path:str):
+    '''
+    Load the JSON schema from a *.json file and use the Draft 2020-12 version of the JSON specifications to create and return a validator.
+    The specifications has never been finalized and remains in draft form. 2020-12 appears to be the latest version.
+    '''
+    schema = json.load(open(schema_path,'r'))
+    validator = Draft202012Validator(schema)
+    return validator
+
 def _check_h3_structure(cell:dict) -> bool:
     '''
     We expect the cell dictionary to have a specific structure as shown below.
@@ -68,7 +79,7 @@ def _check_h3_structure(cell:dict) -> bool:
         "properties": {
             "index": <STRING>,
             "centroid_lat": <FLOAT>,
-            "centroid_lon": <FLOAT>,,
+            "centroid_lon": <FLOAT>,
             "resolution": <INT>
         },
         "geometry": {
@@ -77,6 +88,20 @@ def _check_h3_structure(cell:dict) -> bool:
         }
     }
     '''
+    global validator_geojson, h3_validation
+    # Use the official GeoJSON schema to validate the cell structure
+    errors = list(validator_geojson.iter_errors(cell))
+
+    if len(errors) > 0:
+        print(errors)
+        return False
+
+    # Use a H3 schema to validate the cell structure
+    errors = list(validator_h3.iter_errors(cell))
+    
+    if len(errors) > 0:
+        print(errors)
+        return False
 
     # Check that all the required keywords are present in the cell dictionary.
     if "properties" not in cell:
@@ -262,3 +287,7 @@ def h3_validation(test_cells:list, reference_cells:list, threshold=0.95,):
     print(f"Done: {dt:.1f} seconds.")
 
     return valid_cells
+
+# Load the validator as a global variable. This makes it easier to work with since it does not need to be loaded continuously or passed as a variable.
+validator_geojson = get_schema_validator("geojson_feature_schema.json")
+validator_h3 = get_schema_validator("h3_schema.json")
