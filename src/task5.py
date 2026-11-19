@@ -293,7 +293,8 @@ def anonymise_augmented_subsample_data():
                 cause_code TEXT,
                 official_suburb TEXT,
                 wind_speed_mps REAL,
-                wind_direction_deg REAL
+                wind_direction_deg REAL,
+                k_anonymity INTEGER DEFAULT -1
             );
         '''
         cur.execute(query_create_table)
@@ -415,3 +416,90 @@ def export_anonymous_csv_file():
     tic_end = time.perf_counter()
     dt = tic_end - tic_start
     print(f"Done: {dt:.1f} seconds.")
+
+def calculate_k_anonymity():
+    '''
+
+    '''
+
+    print(" - Calculating k-anonymity score for anonymized dataset.")
+    tic_start = time.perf_counter()
+    
+    with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:
+        cur = con.cursor()
+
+        while True:
+            get_data_query = '''
+                SELECT 
+                    creation_timestamp_approx,
+                    completion_timestamp_approx,
+                    h3_level8_index,
+                    directorate,
+                    department,
+                    branch,
+                    section,
+                    code_group,
+                    code,
+                    cause_code_group,
+                    cause_code,
+                    official_suburb
+                FROM anonymous_requests
+                WHERE k_anonymity == -1
+                LIMIT 1;
+            '''
+            cur.execute(get_data_query)
+            id_data = cur.fetchone()
+
+            if id_data == None:
+                break
+            #print(id_data)
+
+            get_anonymity_query = '''
+                SELECT count(*)
+                FROM anonymous_requests
+                WHERE
+                    creation_timestamp_approx IS ?
+                    AND completion_timestamp_approx IS ?
+                    AND h3_level8_index IS ?
+                    AND directorate IS ?
+                    AND department IS ?
+                    AND branch IS ?
+                    AND section IS ?
+                    AND code_group IS ?
+                    AND code IS ?
+                    AND cause_code_group IS ?
+                    AND cause_code IS ?
+                    AND official_suburb IS ?;
+            '''
+            cur.execute(get_anonymity_query, id_data)
+            k_anom = cur.fetchone()[0]
+            #print(k_anom)
+
+            set_anonymity_query = '''
+                UPDATE anonymous_requests
+                    SET k_anonymity = ?
+                WHERE
+                    creation_timestamp_approx IS ?
+                    AND completion_timestamp_approx IS ?
+                    AND h3_level8_index IS ?
+                    AND directorate IS ?
+                    AND department IS ?
+                    AND branch IS ?
+                    AND section IS ?
+                    AND code_group IS ?
+                    AND code IS ?
+                    AND cause_code_group IS ?
+                    AND cause_code IS ?
+                    AND official_suburb IS ?;
+            '''
+
+            cur.execute(set_anonymity_query, (k_anom,) + id_data)
+        con.commit()
+
+    tic_end = time.perf_counter()
+    dt = tic_end - tic_start
+    print(f"Done: {dt:.1f} seconds.")
+
+
+if __name__ == "__main__":
+    calculate_k_anonymity()
