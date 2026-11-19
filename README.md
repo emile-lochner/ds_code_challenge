@@ -78,3 +78,6 @@ To anonymise the service requests, I made the following changes:
 - Removed GPS coordinates but kept the h3_level8_index. Exact GPS coordinates could be used to locate and identify the resident, while the H3 cells at level 8 resolution have an approximate radius of 500 meters. This is enough to obfuscate the location of the resident while still being useful for most analytical tasks and is within the 500 metre accuracy required by the assignment.
 
 An anonymised CSV file will also be exported to `/export/anonymous.csv` once the pipeline is run as an example of what the resulting output would look like.
+
+>**Review:** 
+> I have improved the anonymisation by also calculating the k-anonymity score for each row in the anonymized data using a subset of the columns that might be quasi-identifiers. Only records with an anonymity score equal or above the requested threshold is written to the anonymous.csv file.

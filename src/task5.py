@@ -352,7 +352,7 @@ def anonymise_augmented_subsample_data():
     dt = tic_end - tic_start
     print(f"Done: {dt:.1f} seconds.")
 
-def export_anonymous_csv_file():
+def export_anonymous_csv_file(k_anonymity: int):
     """Export the `anonymous_requests` table to `export/anonymous.csv`."""
     
     print(" - Export anonymous CSV file.")
@@ -399,10 +399,11 @@ def export_anonymous_csv_file():
                 wind_speed_mps,
                 wind_direction_deg
             FROM
-                anonymous_requests;
+                anonymous_requests
+            WHERE k_anonymity >= ?;
         '''
 
-        cur.execute(query_fetch)
+        cur.execute(query_fetch, (k_anonymity,))
         while True:
             row = cur.fetchone()
             if row == None:
@@ -418,9 +419,7 @@ def export_anonymous_csv_file():
     print(f"Done: {dt:.1f} seconds.")
 
 def calculate_k_anonymity():
-    '''
-
-    '''
+    quasi_identifiers = ["creation_timestamp_approx", "completion_timestamp_approx", "h3_level8_index", "official_suburb"]
 
     print(" - Calculating k-anonymity score for anonymized dataset.")
     tic_start = time.perf_counter()
@@ -429,19 +428,10 @@ def calculate_k_anonymity():
         cur = con.cursor()
 
         while True:
-            get_data_query = '''
-                SELECT 
+            get_data_query = '''SELECT 
                     creation_timestamp_approx,
                     completion_timestamp_approx,
                     h3_level8_index,
-                    directorate,
-                    department,
-                    branch,
-                    section,
-                    code_group,
-                    code,
-                    cause_code_group,
-                    cause_code,
                     official_suburb
                 FROM anonymous_requests
                 WHERE k_anonymity == -1
@@ -461,14 +451,6 @@ def calculate_k_anonymity():
                     creation_timestamp_approx IS ?
                     AND completion_timestamp_approx IS ?
                     AND h3_level8_index IS ?
-                    AND directorate IS ?
-                    AND department IS ?
-                    AND branch IS ?
-                    AND section IS ?
-                    AND code_group IS ?
-                    AND code IS ?
-                    AND cause_code_group IS ?
-                    AND cause_code IS ?
                     AND official_suburb IS ?;
             '''
             cur.execute(get_anonymity_query, id_data)
@@ -482,14 +464,6 @@ def calculate_k_anonymity():
                     creation_timestamp_approx IS ?
                     AND completion_timestamp_approx IS ?
                     AND h3_level8_index IS ?
-                    AND directorate IS ?
-                    AND department IS ?
-                    AND branch IS ?
-                    AND section IS ?
-                    AND code_group IS ?
-                    AND code IS ?
-                    AND cause_code_group IS ?
-                    AND cause_code IS ?
                     AND official_suburb IS ?;
             '''
 
@@ -500,6 +474,3 @@ def calculate_k_anonymity():
     dt = tic_end - tic_start
     print(f"Done: {dt:.1f} seconds.")
 
-
-if __name__ == "__main__":
-    calculate_k_anonymity()
