@@ -40,7 +40,10 @@ We expect the cell dictionary to have a specific structure as shown below:
 }
 ```
 
-**Review:** I have obtained the official GeoJSON schema for a Feature from  `https://geojson.org/schema/Feature.json`. 
+
+>**Review:** 
+>I have obtained the official GeoJSON schema for a Feature from `https://geojson.org/schema/Feature.json` and used Claude to create a schema for the H3 cells since I could not find an official schema for the H3 cells. The schema checks have been added to the `validation.py` functions and new pytests have been introduced.
+
 
 Of these the most critical for our purpose is the index, centroid coordinates and the geometry. If the cell is missing any of these properties it will be rejected. In practice, if we had either the centroid coordinates or the geometry polygon, we could recover the missing data by using the h3 python library (https://h3geo.org). However, it was considered out of scope for the purposes of this assignment.
 
@@ -54,6 +57,9 @@ To calculate the total score we multiply the overlap and distance score. The tot
 
 ## Task 2: Initial Data Transformation
 I relied heavily on SQLite databases for the data processing and storage. SQL is an very powerful tool that is essential to any data engineering environment and I felt it important to demonstrate my familiarity with databases. Databases provide reliable storage for all of a project's needs and allows reports to be generated without the need to run the data pipeline code. Letos (https://letos.org/) is an OpenSource program available for both Windows and Linux that will allow you to browse the database (automatically generated and stored in `data/database.db`) and create your own queries.
+
+>**Review:** 
+>I have refined my approach to the cell assignment and threshold detection. Previously, I counted the requests without GPS coordinates towards my error rate. This was a little unfair as it dod not check the validity of the algorithm. As a result, I have split the test in two. One checks what percentage of the records do not have GPS coordinates and hance cannot be assigned a H3 cell reference, and the second checks how many with GPS coordinates could be assigned an H3 cell reference. The test checks each individually against a threshold and a combined threshold. With this new approach we see that about 95% with coordinates could be assigned a cell reference.
 
 I was asked to include a threshold check to test the number of service requests that could successfully be assigned an H3 cell index. If a threshold could not not be met the program will terminate in an error state. I achieved a success rate of 74% mainly due to many of the service requests not containing GPS coordinates. Thus, I set a threshold of 70% to allow the program to continue running. The correct threshold to choose in practice will greatly depend on what this data will be used for and hence an arbitrary threshold is difficult to pick and defend. For example, if there is a suburb for which all GPS locations have not been included due to a systematic error it may pull the overall success rate down. If further analysis is heavily dependent on that suburb then the analysis cannot continue. However, if that suburb is not relevant for subsequent analysis then its contribution to the failure rate should not matter. If the failures are spread statistically evenly throughout Cape Town then as long as we still have a statistically significant number of samples, the analysis can continue. A threshold of 70% is still the majority of the data and with nearly a million service requests in the dataset, this should be enough data to allow most types of analyses.
 

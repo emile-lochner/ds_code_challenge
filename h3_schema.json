@@ -8,8 +8,8 @@
       "type": { "const": "Feature" },
       "properties": {
         "type": "object",
-        "required": ["index", "centroid_lat", "centroid_lon", "resolution"],
-        "additionalProperties": false,
+        "required": ["index", "centroid_lat", "centroid_lon"],
+        "additionalProperties": true,
         "properties": {
           "index":        { "type": "string", "pattern": "^[0-9a-f]{15}$" },
           "centroid_lat": { "type": "number", "minimum": -90,  "maximum": 90 },

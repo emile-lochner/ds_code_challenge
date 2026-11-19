@@ -125,10 +125,19 @@ def join_service_requests_with_h3_cells(h3_cells_polygons: dict):
             lat = row[1]
             lon = row[2]
 
-            d, idx = cell_tree.query(np.array((lat, lon)))
+            d, idx = cell_tree.query(np.array((lat, lon)), k=3)
 
-            cell_index = centroid_rows[idx][0]
-            if cell_index not in h3_cells_polygons:
+            # Check the three closest cells
+            found = False
+            for attempt in idx:
+                cell_index = centroid_rows[attempt][0]
+                if cell_index not in h3_cells_polygons:
+                    continue
+                else:
+                    found = True
+                    break
+
+            if found == False:
                 continue
 
             polygon = h3_cells_polygons[cell_index]
@@ -184,13 +193,17 @@ def validate_h3_indices():
     dt = tic_end - tic_start
     print(f"Done: {dt:.1f} seconds.")
 
-def check_h3_assignment_success_threshold(threshold: float):
+def check_h3_assignment_success_threshold(success_threshold: float, missing_threshold: float, combined_threshold : float):
     """Check that the fraction of requests with an H3 index meets a minimum threshold.
 
     Parameters
     ----------
-    threshold : float
+    success_threshold : float
         Minimum acceptable success fraction (0 to 1).
+    missing_threshold : float
+        The maximum fraction of requests that can be missing GPS coordinates (0 to 1).
+    combined_threshold : float
+        The minimum fraction of requests that need to be assigned H3 cells (0 to 1).
 
     Raises
     ------
@@ -201,19 +214,44 @@ def check_h3_assignment_success_threshold(threshold: float):
     print(" - Check cell assignment threshold.")
     with sqlite3.connect(os.environ["OUTPUT_DB"]) as con:
         cur = con.cursor()
+        # Number of cells without data
+        no_data_fraction = '''
+                SELECT (
+                        SELECT count(*)
+                        FROM requests
+                        WHERE
+                            latitude IS NULL 
+                            or longitude IS NULL) / CAST(count(*) AS REAL) 
+                FROM requests;
+            '''
+        cur.execute(no_data_fraction)
+        rows = cur.fetchone()
+        missing_fraction = rows[0]
 
+        print(f"{missing_fraction*100:.1f}% of service requests do not have GPS coordinates and could not be assigned an H3 index.")
+        if missing_fraction > missing_threshold:
+            raise Exception(f"ERROR: More than {missing_threshold*100:.1f}% of requests are missing GPS coordinates.")
+
+        # Success rate for valid cells
         success_fraction = '''
             SELECT (
-                SELECT count(*)
-                FROM requests
-                WHERE 
-                h3_level8_index != '0') / CAST(count(*) AS REAL) 
-            FROM requests;
+                    SELECT count(*)
+                    FROM requests
+                    WHERE 
+                    h3_level8_index != '0') / CAST(count(*) AS REAL) 
+            FROM requests
+            WHERE
+                latitude IS NOT NULL 
+                and longitude IS NOT NULL;
         '''
         cur.execute(success_fraction)
         rows = cur.fetchone()
+        success_fraction = rows[0]
 
-        print(f"{rows[0]*100:.1f}% of service requests could be assigned a H3 index.")
+        print(f"{success_fraction*100:.1f}% of service requests with GPS coordinates could be assigned a H3 index.")
+        if success_fraction < success_threshold:
+            raise Exception(f"ERROR: Cell H3 assignment threshold of {success_threshold*100:.1f}% not met.")
 
-        if rows[0] < threshold:
-            raise Exception(f"Cell H3 assignment threshold of {threshold*100:.1f}% not met.")
+        print(f"{(success_fraction - missing_fraction)*100:.1f}% of service requests could be assigned a H3 index.")
+        if success_fraction - missing_fraction < combined_threshold:
+            raise Exception(f"ERROR: Combined threshold of {combined_threshold*100:.1f}% not met.")

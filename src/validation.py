@@ -93,14 +93,14 @@ def _check_h3_structure(cell:dict) -> bool:
     errors = list(validator_geojson.iter_errors(cell))
 
     if len(errors) > 0:
-        print(errors)
+        #print("GeoJSON Schema Error: ", errors)
         return False
 
     # Use a H3 schema to validate the cell structure
     errors = list(validator_h3.iter_errors(cell))
     
     if len(errors) > 0:
-        print(errors)
+        #print("H3 Schema Error: ", errors)
         return False
 
     # Check that all the required keywords are present in the cell dictionary.
